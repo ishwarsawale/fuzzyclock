@@ -2,7 +2,7 @@
 
 > A suite of Android apps with Fuzzy clock faces
 
-You can find old releases and release notes on the [releases page](https://github.com/tuur29/fuzzyclock/releases).
+You can find old releases and release notes on the [releases page]( https://github.com/ishwarsawale/fuzzyclock/releases).
 
 Click on the app names to see more information about each app.
 
