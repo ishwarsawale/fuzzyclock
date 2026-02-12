@@ -2,58 +2,94 @@ package net.tuurlievens.fuzzyclock.text
 
 class FuzzyTextDutch : FuzzyTextInterface {
 
-    override fun generate(hour: Int, min: Int): String {
-
-        val mintext = when {
-            min < 2 -> "rond"
-            min < 10 -> "iets na"
-            min < 20 -> "kwart na" // hour switches here
-            min < 40 -> "half"
-            min < 50 -> "kwart voor"
-            min < 58 -> "bijna"
-            else -> "rond"
-        }
-
-        // dutch uses "half <hour+1>"
-        val hourtext = if (min < 20) {
-            when {
-                hour % 12 == 1 -> "een"
-                hour % 12 == 2 -> "twee"
-                hour % 12 == 3 -> "drie"
-                hour % 12 == 4 -> "vier"
-                hour % 12 == 5 -> "vijf"
-                hour % 12 == 6 -> "zes"
-                hour % 12 == 7 -> "zeven"
-                hour % 12 == 8 -> "acht"
-                hour % 12 == 9 -> "negen"
-                hour % 12 == 10 -> "tien"
-                hour % 12 == 11 -> "elf"
-                else -> when (hour) {
-                    12 -> "twaalf"
-                    else -> "middernacht"
-                }
-            }
-        } else {
-            when {
-                hour % 12 == 1 -> "twee"
-                hour % 12 == 2 -> "drie"
-                hour % 12 == 3 -> "vier"
-                hour % 12 == 4 -> "vijf"
-                hour % 12 == 5 -> "zes"
-                hour % 12 == 6 -> "zeven"
-                hour % 12 == 7 -> "acht"
-                hour % 12 == 8 -> "negen"
-                hour % 12 == 9 -> "tien"
-                hour % 12 == 10 -> "elf"
-                else -> when (hour) {
-                    11 -> "twaalf"
-                    23 -> "middernacht"
-                    else -> "een"
-                }
-            }
-        }
-
-        return "$mintext\n$hourtext"
+    private fun hourText(h: Int): String = when ((h % 12 + 12) % 12) {
+        1 -> "één"
+        2 -> "twee"
+        3 -> "drie"
+        4 -> "vier"
+        5 -> "vijf"
+        6 -> "zes"
+        7 -> "zeven"
+        8 -> "acht"
+        9 -> "negen"
+        10 -> "tien"
+        11 -> "elf"
+        0 -> "twaalf"
+        else -> "twee"
     }
 
+    private fun minuteText(m: Int): String = when (m) {
+        1 -> "één"
+        2 -> "twee"
+        3 -> "drie"
+        4 -> "vier"
+        5 -> "vijf"
+        6 -> "zes"
+        7 -> "zeven"
+        8 -> "acht"
+        9 -> "negen"
+        10 -> "tien"
+        11 -> "elf"
+        12 -> "twaalf"
+        13 -> "dertien"
+        14 -> "veertien"
+        15 -> "vijftien"
+        else -> "$m"  // fallback
+    }
+
+    override fun generate(hour: Int, min: Int): String {
+        val h24 = ((hour % 24) + 24) % 24
+        val hr = if (h24 == 0) 12 else h24
+        val nextHr = if (h24 == 23) 0 else h24 + 1
+
+        val hrText = hourText(hr)
+        val hrTextNext = hourText(nextHr)
+
+        if (min == 0) {
+            return when (h24) {
+                0 -> "het is middernacht"
+                12 -> "het is twaalf uur"
+                else -> "het is $hrText uur"
+            }
+        }
+
+        val mText = minuteText(min)
+
+        return when {
+            // 1–14 over: "één over ... tot twaalf over"
+            min in 1..14 -> "het is $mText over $hrText"
+
+            // 15: kwart over
+            min == 15 -> "het is kwart over $hrText"
+
+            // 16–29: "X voor half <next>"
+            min in 16..29 -> {
+                val mBeforeHalf = 30 - min
+                val mTextBefore = minuteText(mBeforeHalf)
+                "het is $mTextBefore voor half $hrTextNext"
+            }
+
+            // 30: half
+            min == 30 -> "het is half $hrTextNext"
+
+            // 31–44: "X over half <next>"
+            min in 31..44 -> {
+                val mAfterHalf = min - 30
+                val mTextAfter = minuteText(mAfterHalf)
+                "het is $mTextAfter over half $hrTextNext"
+            }
+
+            // 45: kwart voor
+            min == 45 -> "het is kwart voor $hrTextNext"
+
+            // 46–59: "X voor <next>"
+            min in 46..59 -> {
+                val mBeforeHour = 60 - min
+                val mTextBefore = minuteText(mBeforeHour)
+                "het is $mTextBefore voor $hrTextNext"
+            }
+
+            else -> "het is $hrText uur"
+        }
+    }
 }
